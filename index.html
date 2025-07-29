@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Checklist Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; margin-left: auto; margin-right: auto; }
+    .form-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #aaa; }
+    .checklist { margin-top: 20px; }
+    .checklist label { font-weight: normal; display: flex; align-items: center; }
+    .checklist input { margin-right: 8px; }
+    button { margin-top: 20px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    @media (max-width: 600px) { body { margin: 10px; } }
+    .homepage { margin-bottom: 30px; padding: 15px; border: 1px solid #aaa; border-radius: 8px; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="homepage">
+    <h1>Welcome to the Stock Assessment Checklist Tool</h1>
+    <p>This tool helps you quickly assess a stock's potential. Simply enter a stock ticker, and the tool will fetch live data (company name, sector, and price). Then work through the checklist to make your assessment. You can export your completed checklist to PDF or save your input data for later.</p>
+    <p><strong>How to use:</strong></p>
+    <ul>
+      <li>Enter a stock ticker symbol (e.g., AAPL for Apple).</li>
+      <li>Review the auto-filled information and complete your own targets and thesis.</li>
+      <li>Tick off checklist items as you review the stock.</li>
+      <li>Click "Export to PDF" to print or save your analysis, or "Save Data" to download it as a file.</li>
+    </ul>
+  </div>
+
+  <h2>Stock Assessment Checklist</h2>
+  <div class="form-section">
+    <h3>Stock Details</h3>
+    <label for="ticker">Ticker Symbol:</label>
+    <input type="text" id="ticker" placeholder="e.g., AAPL" />
+
+    <label for="company">Company Name:</label>
+    <input type="text" id="company" readonly />
+
+    <label for="sector">Industry/Sector:</label>
+    <input type="text" id="sector" readonly />
+
+    <label for="price">Current Price:</label>
+    <input type="text" id="price" readonly />
+
+    <label for="targetBuy">Target Buy Price:</label>
+    <input type="text" id="targetBuy" />
+
+    <label for="targetSell">Target Sell Price:</label>
+    <input type="text" id="targetSell" />
+
+    <label for="thesis">Investment Thesis Summary:</label>
+    <textarea id="thesis" rows="4"></textarea>
+  </div>
+
+  <div class="form-section checklist">
+    <h3>Checklist</h3>
+    <label><input type="checkbox"> Understand the Business: Read company profile, identify competitors & industry position.</label>
+    <label><input type="checkbox"> Check Financial Health: Review income statement, balance sheet, cash flow.</label>
+    <label><input type="checkbox"> Look at Growth & Guidance: Read management discussion, earnings call transcripts, analyst ratings.</label>
+    <label><input type="checkbox"> Assess Valuation: Check key ratios & use valuation tools.</label>
+    <label><input type="checkbox"> Monitor Market Sentiment: Insider trading, short interest, recent news.</label>
+    <label><input type="checkbox"> Evaluate Risks: Read risk factors, consider industry trends.</label>
+    <label><input type="checkbox"> Make Your Decision: Set investment thesis, entry & exit strategy.</label>
+  </div>
+
+  <button onclick="exportPDF()">Export to PDF</button>
+  <button onclick="saveData()">Save Data</button>
+
+  <script>
+    async function fetchStockData(ticker) {
+      try {
+        let response = await fetch(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${ticker}?modules=price,summaryProfile`);
+        if (!response.ok) throw new Error('Data not found');
+        let data = await response.json();
+        let priceData = data.quoteSummary.result[0].price;
+        let profileData = data.quoteSummary.result[0].summaryProfile;
+
+        document.getElementById('company').value = priceData.longName || 'N/A';
+        document.getElementById('sector').value = profileData.sector || 'N/A';
+        document.getElementById('price').value = priceData.regularMarketPrice.raw || 'N/A';
+      } catch (e) {
+        alert('Unable to fetch stock data. Please check the ticker symbol.');
+      }
+    }
+
+    document.getElementById('ticker').addEventListener('change', function() {
+      let ticker = this.value.trim().toUpperCase();
+      if (ticker) fetchStockData(ticker);
+    });
+
+    function exportPDF() {
+      window.print();
+    }
+
+    function saveData() {
+      const data = {
+        ticker: document.getElementById('ticker').value,
+        company: document.getElementById('company').value,
+        sector: document.getElementById('sector').value,
+        price: document.getElementById('price').value,
+        targetBuy: document.getElementById('targetBuy').value,
+        targetSell: document.getElementById('targetSell').value,
+        thesis: document.getElementById('thesis').value
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'stock_assessment.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
